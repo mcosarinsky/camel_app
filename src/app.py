@@ -21,18 +21,30 @@ def read_entries_from_file(file_path):
 
     return data
 
+
+def fibo_retracement(low_swing, high_swing, fibo_level):
+    diff = high_swing - low_swing
+    
+    # Calculate the retracement value for the given fibo_level
+    retracement_value = high_swing - (diff * fibo_level)
+    return retracement_value
+
+
 def plot_strat(df, entry):
     A, B, C, D, E, F = entry
     
     start = max(A - 5, 0)
     end = min(F + 5, len(df))
     df = df.loc[start:end, :]
+    df['date'] = pd.to_datetime(df['date'])
     
     return df
     
+
 Data = pd.read_csv('signals_processed.csv')
 entries = read_entries_from_file('entries.txt')
 entry = entries[0]
+A, B, C, D, E, F = entry
 df = plot_strat(Data, entry)
     
 app = dash.Dash(__name__)
@@ -63,7 +75,7 @@ app.layout = html.Div([
     [Input('fibo-checklist', 'value')]
 )
 
-def update_chart(_, fibo_levels):
+def update_chart(fibo_levels):
     fig = go.Figure(data=[go.Candlestick(
         x=df['date'],
         open=df['open'],
