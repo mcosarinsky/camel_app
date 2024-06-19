@@ -6,6 +6,8 @@ import pandas as pd
 import webbrowser
 from threading import Timer
 
+
+# Helper function to read entries from a file
 def read_entries_from_file(file_path):
     # Initialize an empty list to store the tuples
     data = []
@@ -22,6 +24,7 @@ def read_entries_from_file(file_path):
     return data
 
 
+# Calculate the Fibonacci retracement value
 def fibo_retracement(low_swing, high_swing, fibo_level):
     diff = high_swing - low_swing
     
@@ -29,7 +32,7 @@ def fibo_retracement(low_swing, high_swing, fibo_level):
     retracement_value = high_swing - (diff * fibo_level)
     return retracement_value
 
-
+# Define range of data to plot
 def plot_strat(df, entry):
     A, B, C, D, E, F = entry
     
@@ -40,17 +43,22 @@ def plot_strat(df, entry):
     
     return df
     
-
+# Load data and entries from files
 Data = pd.read_csv('signals_processed.csv')
 entries = read_entries_from_file('entries.txt')
-entry = entries[0]
-A, B, C, D, E, F = entry
-df = plot_strat(Data, entry)
     
+# Create the dash app
 app = dash.Dash(__name__)
 server = app.server
 
+# Define the layout of the app
 app.layout = html.Div([
+    dcc.Dropdown(
+        id='entry-select',
+        options=[{'label': f'Entry {i+1}', 'value': i} for i in range(len(entries))],
+        value=0,
+        multi=False
+    ),
     dcc.Dropdown(
         id='fibo-checklist',
         options=[
@@ -64,12 +72,14 @@ app.layout = html.Div([
             {'label': 'fibo level CD 0.618', 'value': 'fibo_CD_618'},
             {'label': 'fibo level CD 0.382', 'value': 'fibo_CD_382'}
         ],
-        value=['fibo_AB_786'],
+        value=[],
+        placeholder="Select fibo level...",
         multi=True
     ),
     dcc.Graph(id='candlestick-chart'),
 ])
 
+# Helper function to add Fibonacci retracement levels to the chart
 def add_fibonacci_trace(fig, df, start_point, end_point, level, label):
     retracement_value = fibo_retracement(df.loc[start_point, 'low'], df.loc[end_point, 'high'], level)
     time_diff = (df['date'].iloc[1] - df['date'].iloc[0]).total_seconds()
@@ -95,12 +105,17 @@ def add_fibonacci_trace(fig, df, start_point, end_point, level, label):
         )
     )
 
+# Define the callback to update the chart
 @app.callback(
     Output('candlestick-chart', 'figure'),
-    [Input('fibo-checklist', 'value')]
+    [Input('entry-select', 'value'), Input('fibo-checklist', 'value')]
 )
 
-def update_chart(fibo_levels):
+def update_chart(entry_index, fibo_levels):
+    entry = entries[entry_index]
+    A, B, C, D, E, F = entry
+    df = plot_strat(Data, entry)
+    
     fig = go.Figure(data=[go.Candlestick(
         x=df['date'],
         open=df['open'],
