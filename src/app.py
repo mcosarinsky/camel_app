@@ -36,7 +36,7 @@ def plot_strat(df, entry):
     start = max(A - 5, 0)
     end = min(F + 5, len(df))
     df = df.loc[start:end, :]
-    df['date'] = pd.to_datetime(df['date'])
+    df.loc[:, 'date'] = pd.to_datetime(df['date'])
     
     return df
     
@@ -69,6 +69,31 @@ app.layout = html.Div([
     ),
     dcc.Graph(id='candlestick-chart'),
 ])
+
+def add_fibonacci_trace(fig, df, start_point, end_point, level, label):
+    retracement_value = fibo_retracement(df.loc[start_point, 'low'], df.loc[end_point, 'high'], level)
+    time_diff = (df['date'].iloc[1] - df['date'].iloc[0]).total_seconds()
+    points_offset = 0.4 * time_diff
+    fig.add_trace(go.Scatter(
+        x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
+        y=[retracement_value, retracement_value],
+        mode='lines',
+        line=dict(dash='dot', color='black', width=1),
+        opacity=0.5,
+        name=label,
+        showlegend=False
+    ))
+    fig.add_annotation(
+        x=df['date'].iloc[-10],  
+        y=retracement_value,
+        text=label,
+        showarrow=False,
+        xanchor='left',
+        yanchor='top',
+        font=dict(
+            color='black'
+        )
+    )
 
 @app.callback(
     Output('candlestick-chart', 'figure'),
@@ -140,214 +165,24 @@ def update_chart(fibo_levels):
         showlegend=False
     ))
 
-    # Add Fibonacci levels traces
-    if 'fibo_AB_786' in fibo_levels:
-        fibo_AB_786 = fibo_retracement(df.loc[A, 'low'], df.loc[B, 'high'], 0.786)
-        fig.add_trace(go.Scatter(
-            x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
-            y=[fibo_AB_786, fibo_AB_786],
-            mode='lines',
-            line=dict(dash='dot', color='black', width=1),
-            opacity=0.5,
-            name='fibo AB 0.786',
-            showlegend=False
-        ))
-        fig.add_annotation(
-            x=df['date'].iloc[-10],  
-            y=fibo_AB_786,
-            text='fibo AB 0.786',
-            showarrow=False,
-            xanchor='left',
-            yanchor='top',
-            font=dict(
-                color='black'
-            )
-        )
+    # Add Fibonacci levels
+    fibo_mapping = {
+        'fibo_AB_786': ((A, B), 0.786, 'fibo AB 0.786'),
+        'fibo_AB_696': ((A, B), 0.696, 'fibo AB 0.696'),
+        'fibo_AB_535': ((A, B), 0.535, 'fibo AB 0.535'),
+        'fibo_AB_618': ((A, B), 0.618, 'fibo AB 0.618'),
+        'fibo_CD_786': ((C, D), 0.786, 'fibo CD 0.786'),
+        'fibo_CD_696': ((C, D), 0.696, 'fibo CD 0.696'),
+        'fibo_CD_535': ((C, D), 0.535, 'fibo CD 0.535'),
+        'fibo_CD_618': ((C, D), 0.618, 'fibo CD 0.618'),
+        'fibo_CD_382': ((C, D), 0.382, 'fibo CD 0.382')
+    }
+
+    for fibo_level in fibo_levels:
+        if fibo_level in fibo_mapping:
+            points, level, label = fibo_mapping[fibo_level]
+            add_fibonacci_trace(fig, df, points[0], points[1], level, label) 
     
-    if 'fibo_AB_696' in fibo_levels:
-        fibo_AB_696 = fibo_retracement(df.loc[A, 'low'], df.loc[B, 'high'], 0.696)
-        fig.add_trace(go.Scatter(
-            x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
-            y=[fibo_AB_696, fibo_AB_696],
-            mode='lines',
-            line=dict(dash='dot', color='black', width=1),
-            opacity=0.5,
-            name='fibo AB 0.696',
-            showlegend=False
-        ))
-        fig.add_annotation(
-            x=df['date'].iloc[-10],  
-            y=fibo_AB_696,
-            text='fibo AB 0.696',
-            showarrow=False,
-            xanchor='left',
-            yanchor='top',
-            font=dict(
-                color='black'
-            )
-        )
-    
-    if 'fibo_AB_535' in fibo_levels:
-        fibo_AB_535 = fibo_retracement(df.loc[A, 'low'], df.loc[B, 'high'], 0.535)
-        fig.add_trace(go.Scatter(
-            x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
-            y=[fibo_AB_535, fibo_AB_535],
-            mode='lines',
-            line=dict(dash='dot', color='black', width=1),
-            opacity=0.5,
-            name='fibo AB 0.535',
-            showlegend=False
-        ))
-        fig.add_annotation(
-            x=df['date'].iloc[-10],  
-            y=fibo_AB_535,
-            text='fibo AB 0.535',
-            showarrow=False,
-            xanchor='left',
-            yanchor='top',
-            font=dict(
-                color='black'
-            )
-        )
-    
-    if 'fibo_AB_618' in fibo_levels:
-        fibo_AB_618 = fibo_retracement(df.loc[A, 'low'], df.loc[B, 'high'], 0.618)
-        fig.add_trace(go.Scatter(
-            x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
-            y=[fibo_AB_618, fibo_AB_618],
-            mode='lines',
-            line=dict(dash='dot', color='black', width=1),
-            opacity=0.5,
-            name='fibo AB 0.618',
-            showlegend=False
-        ))
-        fig.add_annotation(
-            x=df['date'].iloc[-10],  
-            y=fibo_AB_618,
-            text='fibo AB 0.618',
-            showarrow=False,
-            xanchor='left',
-            yanchor='top',
-            font=dict(
-                color='black'
-            )
-        )
-    
-    if 'fibo_CD_786' in fibo_levels:
-        fibo_CD_786 = fibo_retracement(df.loc[C, 'low'], df.loc[D, 'high'], 0.786)
-        fig.add_trace(go.Scatter(
-            x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
-            y=[fibo_CD_786, fibo_CD_786],
-            mode='lines',
-            line=dict(dash='dot', color='black', width=1),
-            opacity=0.5,
-            name='fibo CD 0.786',
-            showlegend=False
-        ))
-        fig.add_annotation(
-            x=df['date'].iloc[-10],  
-            y=fibo_CD_786,
-            text='fibo CD 0.786',
-            showarrow=False,
-            xanchor='left',
-            yanchor='top',
-            font=dict(
-                color='black'
-            )
-        )
-    
-    if 'fibo_CD_696' in fibo_levels:
-        fibo_CD_696 = fibo_retracement(df.loc[C, 'low'], df.loc[D, 'high'], 0.696)
-        fig.add_trace(go.Scatter(
-            x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
-            y=[fibo_CD_696, fibo_CD_696],
-            mode='lines',
-            line=dict(dash='dot', color='black', width=1),
-            opacity=0.5,
-            name='fibo CD 0.696',
-            showlegend=False
-        ))
-        fig.add_annotation(
-            x=df['date'].iloc[-10],  
-            y=fibo_CD_696,
-            text='fibo CD 0.696',
-            showarrow=False,
-            xanchor='left',
-            yanchor='top',
-            font=dict(
-                color='black'
-            )
-        )
-    
-    if 'fibo_CD_535' in fibo_levels:
-        fibo_CD_535 = fibo_retracement(df.loc[C, 'low'], df.loc[D, 'high'], 0.535)
-        fig.add_trace(go.Scatter(
-            x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
-            y=[fibo_CD_535, fibo_CD_535],
-            mode='lines',
-            line=dict(dash='dot', color='black', width=1),
-            opacity=0.5,
-            name='fibo CD 0.535',
-            showlegend=False
-        ))
-        fig.add_annotation(
-            x=df['date'].iloc[-10],  
-            y=fibo_CD_535,
-            text='fibo CD 0.535',
-            showarrow=False,
-            xanchor='left',
-            yanchor='top',
-            font=dict(
-                color='black'
-            )
-        )
-    
-    if 'fibo_CD_618' in fibo_levels:
-        fibo_CD_618 = fibo_retracement(df.loc[C, 'low'], df.loc[D, 'high'], 0.618)
-        fig.add_trace(go.Scatter(
-            x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
-            y=[fibo_CD_618, fibo_CD_618],
-            mode='lines',
-            line=dict(dash='dot', color='black', width=1),
-            opacity=0.5,
-            name='fibo CD 0.618',
-            showlegend=False
-        ))
-        fig.add_annotation(
-            x=df['date'].iloc[-10],  
-            y=fibo_CD_618,
-            text='fibo CD 0.618',
-            showarrow=False,
-            xanchor='left',
-            yanchor='top',
-            font=dict(
-                color='black'
-            )
-        )
-    
-    if 'fibo_CD_382' in fibo_levels:
-        fibo_CD_382 = fibo_retracement(df.loc[C, 'low'], df.loc[D, 'high'], 0.786)
-        fig.add_trace(go.Scatter(
-            x=[df['date'].min(), df['date'].max() + 2*pd.Timedelta(seconds=points_offset*5)],
-            y=[fibo_CD_382, fibo_CD_382],
-            mode='lines',
-            line=dict(dash='dot', color='black', width=1),
-            opacity=0.5,
-            name='fibo CD 0.382',
-            showlegend=False
-        ))
-        fig.add_annotation(
-            x=df['date'].iloc[-10],  
-            y=fibo_CD_382,
-            text='fibo CD 0.382',
-            showarrow=False,
-            xanchor='left',
-            yanchor='top',
-            font=dict(
-                color='black'
-            )
-        )
-        
     # Update layout for better visuals
     fig.update_layout(
         title='Camel strategy',
@@ -358,8 +193,6 @@ def update_chart(fibo_levels):
     )
 
     return fig
-
-
 
 if __name__ == "__main__":
     app.run_server(debug=False)
